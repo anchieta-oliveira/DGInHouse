@@ -16,8 +16,6 @@ def init() -> dict:
 
     return parameters 
 
-np = 2
-
 def read_data():
     data_com = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/com_lig/100_micro/rg_cg_and_rmsd_com_lig.dat', sep='\t', skipinitialspace=True)
     data_sem = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/sem_lig/100_micro/rg_cg_and_rmsd_sem_lig_100.dat', sep='\t', skipinitialspace=True)
@@ -161,7 +159,7 @@ def make_grafic_3D(path: str, data_rg: list, data_rmsd: list, data_dg: list, sav
     plt.tight_layout()
 
     if save_fig:
-        savefig(f"{path}")
+        fig.savefig(f"{path}")
 
     if show_grafic:
         plt.show()
