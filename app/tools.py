@@ -10,7 +10,10 @@ def read_arguments() -> dict:
     i = 0 
     for flag in input_parameters_command_line:
         if "-" in flag:
-            parameters[flag] = input_parameters_command_line[i+1]
+            try:
+                parameters[flag] = input_parameters_command_line[i+1]
+            except:
+                parameters[flag] = True
         
         i += 1 
 
