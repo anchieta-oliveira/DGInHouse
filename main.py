@@ -28,36 +28,6 @@ def read_data():
     return data
 
 
-def calcule_probability(data: pd, np: int) -> list:
-    x = data['RMSD'].tolist()
-    y = data['RG'].tolist()
-    z = []
-    x_y = []
-    model = data['model'].tolist()
-
-    i = 0
-    for o in x: 
-        x_y.append((o, y[i]))
-        i += 1
-
-
-    @njit(fastmath = True)
-    def prob(cont: tuple):
-        return x_y.count(cont)
-
-    pool = Pool(np)
-
-    with pool as p:
-    	z = p.map(prob, x_y)
-
-    p = []
-    n = len(z)
-    for o in z:
-        p.append(o/n)
-
-    return p
-
-
 def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
     temp = 310
     KB = 3.2976268E-24
@@ -94,12 +64,11 @@ def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
 
 
 
-def teste_probabili(data: pd, np: int) -> list:
+def calcule_probability(data: pd, np: int) -> list:
     x = data['RMSD'].tolist()
     y = data['RG'].tolist()
     z = []
     x_y = []
-    model = data['model'].tolist()
 
     i = 0
     for o in x: 
@@ -169,6 +138,6 @@ data = read_data().round(1)
 xlim = data['RMSD'].min(), data['RMSD'].max()
 ylim = data['RG'].min(), data['RG'].max() 
 size_data = int(len(data.index)/2)
-dg = calcule_Delta_G(teste_probabili(data, 1), 310, data['model'].tolist())
+dg = calcule_Delta_G(calcule_probability(data, 1), 310, data['model'].tolist())
 #save_data(data['RG'].tolist(), data['RMSD'].tolist(), dg, "./", )
 make_grafic_3D("./", data['RG'].tolist(), data['RMSD'].tolist(), dg, False, True)
