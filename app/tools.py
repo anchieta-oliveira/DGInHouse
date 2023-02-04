@@ -137,3 +137,6 @@ def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, 
 
     if show_grafic:
         plt.show()
+
+def make_grafic_2D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
+    pass 
