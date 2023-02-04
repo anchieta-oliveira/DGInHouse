@@ -19,7 +19,7 @@ def read_arguments() -> dict:
 
     return parameters 
 
-def read_data():
+def read_data(path_apo: str, path_holo:str):
     data_com = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/com_lig/100_micro/rg_cg_and_rmsd_com_lig.dat', sep='\t', skipinitialspace=True)
     data_sem = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/sem_lig/100_micro/rg_cg_and_rmsd_sem_lig_100.dat', sep='\t', skipinitialspace=True)
 
