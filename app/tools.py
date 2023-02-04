@@ -102,7 +102,7 @@ def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str):
 
 
 
-def make_grafic_3D(data: pd, path: str, data_dg: list, save_fig: bool, show_grafic: bool):
+def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
     data_rmsd = data['RMSD'].tolist()
     data_rg = data['RG'].tolist()
     xlim = data['RMSD'].min(), data['RMSD'].max()
@@ -134,7 +134,7 @@ def make_grafic_3D(data: pd, path: str, data_dg: list, save_fig: bool, show_graf
     plt.tight_layout()
 
     if save_fig:
-        fig.savefig(f"{path}/ono")
+        fig.savefig(f"{path}/teste.png")
 
     if show_grafic:
         plt.show()
