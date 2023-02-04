@@ -91,7 +91,6 @@ def calcule_probability(data: pd) -> list:
     n = len(z)
     for o in z:
         p.append(o/n)
-    print(p[6])
 
     return p
 
