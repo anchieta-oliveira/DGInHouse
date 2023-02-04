@@ -2,17 +2,18 @@ import math
 from multiprocessing import Pool
 import pandas as pd
 import matplotlib.pyplot as plt
-from numba import njit
 import sys
 from collections import Counter
 
-def init() -> dict:
+def read_arguments() -> dict:
     parameters = {}
     input_parameters_command_line = sys.argv
-    args = input_parameters_command_line.split("-")
-
-    for flag in args:
-        parameters[f"{flag.split('' )[0]}"] = flag.split(" ")[1]
+    i = 0 
+    for flag in input_parameters_command_line:
+        if "-" in flag:
+            parameters[flag] = input_parameters_command_line[i+1]
+        
+        i += 1 
 
     return parameters 
 
@@ -134,10 +135,10 @@ def make_grafic_3D(path: str, data_rg: list, data_rmsd: list, data_dg: list, sav
         plt.show()
 
 
-data = read_data().round(1)
-xlim = data['RMSD'].min(), data['RMSD'].max()
-ylim = data['RG'].min(), data['RG'].max() 
-size_data = int(len(data.index)/2)
-dg = calcule_Delta_G(calcule_probability(data, 1), 310, data['model'].tolist())
-#save_data(data['RG'].tolist(), data['RMSD'].tolist(), dg, "./", )
-make_grafic_3D("./", data['RG'].tolist(), data['RMSD'].tolist(), dg, False, True)
+#data = read_data().round(1)
+#xlim = data['RMSD'].min(), data['RMSD'].max()
+#ylim = data['RG'].min(), data['RG'].max() 
+#size_data = int(len(data.index)/2)
+#dg = calcule_Delta_G(calcule_probability(data, 1), 310, data['model'].tolist())
+#make_grafic_3D("./", data['RG'].tolist(), data['RMSD'].tolist(), dg, False, True)
+print(read_arguments())
