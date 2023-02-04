@@ -64,7 +64,7 @@ def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
 
 
 
-def calcule_probability(data: pd, np: int) -> list:
+def calcule_probability(data: pd) -> list:
     x = data['RMSD'].tolist()
     y = data['RG'].tolist()
     z = []
