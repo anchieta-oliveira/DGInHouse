@@ -19,17 +19,17 @@ def read_arguments() -> dict:
 
     return parameters 
 
-def read_data(path_apo: str, path_holo:str):
+def read_data(path_a: str, path_b:str):
     #data_com = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/com_lig/100_micro/rg_cg_and_rmsd_com_lig.dat', sep='\t', skipinitialspace=True)
     #data_sem = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/sem_lig/100_micro/rg_cg_and_rmsd_sem_lig_100.dat', sep='\t', skipinitialspace=True)
 
-    data_com = pd.read_csv(path_holo, sep='\t', skipinitialspace=True)
-    data_sem = pd.read_csv(path_apo, sep='\t', skipinitialspace=True)
+    data_a = pd.read_csv(path_a, sep='\t', skipinitialspace=True)
+    data_b = pd.read_csv(path_b, sep='\t', skipinitialspace=True)
 
-    data_com = data_com.assign(model='holo')
-    data_sem = data_sem.assign(model='apo')
+    data_a = data_a.assign(model='a')
+    data_b = data_b.assign(model='b')
 
-    data = pd.merge(data_sem, data_com, how='outer')
+    data = pd.merge(data_a, data_b, how='outer')
 
     return data
 
@@ -54,16 +54,16 @@ def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
     min_e_apo = max_e
     print(min_e_holo)
     for e in d_g:
-        if model[i] == 'holo' and e < min_e_holo:
+        if model[i] == 'b' and e < min_e_holo:
             min_e_holo = e 
         
-        if model[i] == 'apo' and e < min_e_apo:
+        if model[i] == 'a' and e < min_e_apo:
             min_e_apo = e 
         i +=1
 
-    print(f"Min apo: {min_e_apo}")
+    print(f"Min A: {min_e_apo}")
 
-    print(f"Min Holo: {min_e_holo}")
+    print(f"Min B: {min_e_holo}")
     print(f"deltaG: {min_e_holo-(min_e_apo)}")
 
     return d_g 

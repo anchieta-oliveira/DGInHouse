@@ -8,9 +8,9 @@ if '-traj' in args and '-cor' in args and '-top' in args:
     pass
 
 
-if '-data_apo' in args and '-data_holo' in args:
+if '-data_a' in args and '-data_b' in args:
     # Ler dados de RG-RMSD de arquivo
-    data = read_data(path_apo=args['-data_apo'], path_holo=args['-data_holo']).round(1)
+    data = read_data(path_a=args['-data_a'], path_b=args['-data_b']).round(1)
 
 
 if '-data_DG' in args:
