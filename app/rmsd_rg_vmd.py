@@ -8,7 +8,7 @@ def script_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, se
 
     pbc unwrap -sel  '""" + selection + """'
 
-    set outfile [open""" +  path + "/" + prefix_out + """.dat w];
+    set outfile [open """ +  path + "/" + prefix_out + """.dat w];
     set nf [molinfo top get numframes]
     set sel_protein_cg [atomselect top '""" + selection + """']
     set frame0 [atomselect top '""" + selection + """' frame 0]
@@ -49,7 +49,7 @@ def script_rg_rmsd_big_traj(cord: str, top: str, traj: str, prefix_out:str, path
 
     mol load """ + cord.split(".")[-1] + " " + cord + " " + top.split(".")[-1] + " " + top + """  
 
-    set outfile [open""" +  path + "/" + prefix_out + """.dat w];
+    set outfile [open """ +  path + "/" + prefix_out + """.dat w];
     set sel_protein_cg [atomselect top '""" + selection + """']
     set frame0 [atomselect top '""" + selection + """' frame 0]
     puts $outfile "RG\tRMSD"
