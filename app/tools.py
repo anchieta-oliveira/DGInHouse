@@ -1,8 +1,11 @@
 import math
+import os
+import subprocess
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 from collections import Counter
+from app.rmsd_rg_vmd import script_rg_rmsd_big_traj, script_rg_rmsd, script_bigdcd
 
 def read_arguments() -> dict:
     parameters = {}
@@ -32,6 +35,22 @@ def read_data(path_a: str, path_b:str):
     data = pd.merge(data_a, data_b, how='outer')
 
     return data
+
+
+def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str, big_traj: bool):
+    if big_traj: 
+        with open(f'{path}/{prefix_out}_rg_rmsd.tmp', 'w') as file_script:
+            file_script.writelines(script_rg_rmsd_big_traj(cord=cord, top=top, traj=traj, prefix_out=prefix_out, path=path, selection=selection))
+        with open(f'{path}/bigdcd.tcl', 'w') as file_bigdcd:
+            file_bigdcd.writelines(script_bigdcd())
+    else:
+        with open(f'{path}/{prefix_out}_rg_rmsd.tmp', 'w') as file_script:
+            file_script.writelines(script_rg_rmsd(cord=cord, top=top, traj=traj, prefix_out=prefix_out, path=path, selection=selection))
+
+    proc = subprocess.Popen(args=f"vmd -e {path}/{prefix_out}_rg_rmsd.tmp -dispdev text > {path}/{prefix_out}_rg_rmsd_vmd.log", shell=True)
+    proc.wait()
+    os.remove(f'{path}/{prefix_out}_rg_rmsd.tmp')
+    os.remove(f'{path}/bigdcd.tcl')
 
 
 def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
