@@ -14,12 +14,19 @@ def read_arguments() -> dict:
     for flag in input_parameters_command_line:
         if "-" in flag:
             try:
-                parameters[flag] = input_parameters_command_line[i+1]
+                if "\"" in input_parameters_command_line[i+1]:
+                    text = ""
+                    o = 1
+                    while "\"" != input_parameters_command_line[i+1]:
+                        text += input_parameters_command_line[i+1+o]
+                        o += 1
+                else:
+                    parameters[flag] = input_parameters_command_line[i+1]
+
             except:
                 parameters[flag] = True
         
         i += 1 
-
     return parameters 
 
 def read_data(path_a: str, path_b:str):
@@ -37,8 +44,8 @@ def read_data(path_a: str, path_b:str):
     return data
 
 
-def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str, big_traj: bool):
-    if big_traj: 
+def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str, big_traj: str):
+    if big_traj == "on": 
         with open(f'{path}/{prefix_out}_rg_rmsd.tmp', 'w') as file_script:
             file_script.writelines(script_rg_rmsd_big_traj(cord=cord, top=top, traj=traj, prefix_out=prefix_out, path=path, selection=selection))
         with open(f'{path}/bigdcd.tcl', 'w') as file_bigdcd:
@@ -49,9 +56,11 @@ def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, s
 
     proc = subprocess.Popen(args=f"vmd -e {path}/{prefix_out}_rg_rmsd.tmp -dispdev text > {path}/{prefix_out}_rg_rmsd_vmd.log", shell=True)
     proc.wait()
-    os.remove(f'{path}/{prefix_out}_rg_rmsd.tmp')
-    os.remove(f'{path}/bigdcd.tcl')
-
+    try:
+        os.remove(f'{path}/{prefix_out}_rg_rmsd.tmp')
+        os.remove(f'{path}/bigdcd.tcl')
+    except:
+        pass
 
 def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
     KB = 3.2976268E-24
