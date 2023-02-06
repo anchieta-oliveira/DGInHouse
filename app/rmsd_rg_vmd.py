@@ -1,12 +1,12 @@
 
 def script_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str) -> str:
     script_rg_rmsd = """
-    #package require pbctools 
+    package require pbctools 
 
     mol load """ + cord.split(".")[-1] + " " + cord + " " + top.split(".")[-1] + " " + top + """ 
     mol addfile """ +  traj + """ type """ +  traj.split(".")[-1] + """ waitfor all
 
-    #pbc unwrap -sel  " """ + selection + """ "
+    pbc unwrap -sel  " """ + selection + """ "
 
     set outfile [open """ +  path + "/" + prefix_out + """.dat w];
     set nf [molinfo top get numframes]
