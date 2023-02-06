@@ -35,7 +35,6 @@ def read_data(path_a: str, path_b:str):
 
 
 def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
-    temp = 310
     KB = 3.2976268E-24
     AN = 6.02214179E23
     T = float(temp) #temperature
