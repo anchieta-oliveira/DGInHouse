@@ -1,3 +1,7 @@
 /test.py
 /app/__pycache__/
 *.py[cod]
+*.dat
+*.tmp
+*.log
+*.tcl
