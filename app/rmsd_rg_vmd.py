@@ -43,6 +43,7 @@ def script_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, se
 
 
 def script_rg_rmsd_big_traj(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str) -> str:
+    #Existe uma falha nessa implementação, no pbc. A seleção não esta sendo alinhada na caixa corretamente. 
     script_rg_rmsd_big_traj = """
     package require pbctools 
     source bigdcd.tcl
@@ -70,7 +71,10 @@ def script_rg_rmsd_big_traj(cord: str, top: str, traj: str, prefix_out:str, path
         return [expr sqrt($sum / ([$sel num] + 0.0))]
         }
         
-    #pbc unwrap -sel  " """ + selection + """ "
+    #pbc unwrap -first 0 -sel  " """ + selection + """ "
+    #pbc wrap -orthorhombic -shiftcenterrel
+    #pbc wrap -sel  " """ + selection + """ " -centersel  " """ + selection + """ frame 0" -center com
+    #pbc wrap -compound fragment -center com -centersel " """ + selection + """ frame 0" -sel " """ + selection + """ "
     $sel_protein_cg move [measure fit $sel_protein_cg $frame0]
     puts $outfile "[gyr_radius $sel_protein_cg]\t[measure rmsd $sel_protein_cg $frame0]"
     }
