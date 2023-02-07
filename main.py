@@ -1,5 +1,5 @@
 from multiprocessing import Process
-from app.tools import read_arguments, read_data, calcule_Delta_G, calcule_probability, make_grafic_3D, save_data, calcule_rg_rmsd
+from app.tools import read_arguments, read_data, calcule_Delta_G, calcule_probability, make_grafic_3D, save_data, calcule_rg_rmsd, make_grafic_2D
 
 
 args = read_arguments()
@@ -24,20 +24,22 @@ if '-data_DG' in args or '-show_grafic' in args or '-save_fig' in args or '-save
         proc_a.join()
         proc_b.join()
     
-    data = read_data(path_a=args['-data_a'], path_b=args['-data_b']).round(1)
-    probability = calcule_probability(data=data)
+    data = read_data(path_a=args['-data_a'], path_b=args['-data_b'])
+    probability = calcule_probability(data=data.round(int(args['-bin'])))
     delta_g = calcule_Delta_G(probability=probability, temp=args['-temp'], model = data['model'].tolist())
 
 
 if '-show_grafic' in args or '-save_fig' in args:
     if '-show_grafic' in args:
-        make_grafic_3D(data=data, data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
+        make_grafic_3D(data=data.round(int(args['-bin'])), data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
+        make_grafic_2D(data=data, data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
 
     if '-save_fig' in args:
-        make_grafic_3D(data=data, path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
+        make_grafic_3D(data=data.round(int(args['-bin'])), path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
+        make_grafic_2D(data=data, path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
 
 
 if '-save_data' in args:
     # Salva valores de RG-RMSD-DG em arquivo
-    save_data(data_rmsd=data['RMSD'].tolist(), data_rg=data['RG'].tolist(), data_dg=delta_g, path=args['-path'])
+    save_data(data_rmsd=data['RMSD'].tolist(), data_rg=data['RG'].tolist(), data_dg=delta_g, model=data['model'].tolist(), path=args['-path'], prefix_out=args['-prefix_out'])
 
