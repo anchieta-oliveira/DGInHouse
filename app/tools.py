@@ -81,10 +81,10 @@ def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
     min_e_apo = max_e
     print(min_e_holo)
     for e in d_g:
-        if model[i] == 'b' and e < min_e_holo:
+        if model[i] == 'a' and e < min_e_holo:
             min_e_holo = e 
         
-        if model[i] == 'a' and e < min_e_apo:
+        if model[i] == 'b' and e < min_e_apo:
             min_e_apo = e 
         i +=1
 
@@ -139,23 +139,23 @@ def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, 
 
     ax0 = fig.add_subplot(2, 2, 1, projection='3d')
     hb = ax0.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax0.set(xlim=xlim, ylim=ylim)
+    ax0.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     cb = fig.colorbar(hb, ax=ax0, label='∆G(kcal/mol)')
 
     ax1 = fig.add_subplot(2, 2, 2, projection='3d')
     hb = ax1.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax1.set(xlim=xlim, ylim=ylim)
+    ax1.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     cb = fig.colorbar(hb, ax=ax1, label='∆G(kcal/mol)')
 
     ax2 = fig.add_subplot(2, 2, 3, projection='3d')
     hb = ax2.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
     hb = ax2.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax2.set(xlim=xlim, ylim=ylim)
+    ax2.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     #cb = fig.colorbar(hb, ax=d_g, label='∆G(kcal/mol)')
 
     ax3 = fig.add_subplot(2, 2, 4, projection='3d')
     hb = ax3.plot_trisurf(data_rmsd, data_rg, data_dg, cmap='viridis', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax3.set(xlim=xlim, ylim=ylim)
+    ax3.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     cb = fig.colorbar(hb, ax=ax3, label='∆G(kcal/mol)')
     plt.tight_layout()
 
@@ -166,4 +166,37 @@ def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, 
         plt.show()
 
 def make_grafic_2D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
-    pass 
+    data_rmsd = data['RMSD'].tolist()
+    data_rg = data['RG'].tolist()
+    xlim = data['RMSD'].min(), data['RMSD'].max()
+    ylim = data['RG'].min(), data['RG'].max() 
+    size_data = int(len(data.index)/2)
+
+    fig_2D, (ax0, ax1, ax2, ax3) = plt.subplots(ncols=4, sharey=True, figsize=(20, 4))
+    # plot 1 
+    hb = ax0.hexbin(data_rmsd[:size_data], data_rg[:size_data], gridsize=100, bins='log', cmap='Greens')
+    ax0.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
+
+    #cb = fig.colorbar(hb, ax=ax0, label='log10(N)')
+    # Plot 2 
+    hb = ax1.hexbin(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], gridsize=100, bins='log', cmap='OrRd')
+    ax1.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
+
+    #cb = fig.colorbar(hb, ax=ax1, label='log10(N)')
+    # plot 3 
+    hb = ax2.hexbin(data_rmsd[:size_data], data_rg[:size_data], gridsize=100, bins='log', cmap='Greens')
+    hb = ax2.hexbin(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], gridsize=100, bins='log', cmap='OrRd')
+    ax2.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
+
+    #cb = fig.colorbar(hb, ax=ax2, label='log10(N)')
+    # Plot 4
+    hb = ax3.hexbin(data_rmsd, data_rg, gridsize=100, bins='log', cmap='viridis')
+    ax3.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
+    plt.tight_layout()
+
+    #cb = fig.colorbar(hb, ax=ax3, label='log10(N)')
+    if save_fig:
+        fig_2D.savefig(f"{path}/teste.png")
+
+    if show_grafic:
+        plt.show()
