@@ -1,6 +1,7 @@
 import math
 import os
 import subprocess
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
@@ -8,7 +9,8 @@ from collections import Counter
 from app.rmsd_rg_vmd import script_rg_rmsd_big_traj, script_rg_rmsd, script_bigdcd
 
 def read_arguments() -> dict:
-    parameters = {}
+    # Argumetnos padrão 
+    parameters = {'-bin': 1, '-save_data': True, '-path': "./"}
     input_parameters_command_line = sys.argv
     i = 0 
     for flag in input_parameters_command_line:
@@ -122,9 +124,15 @@ def calcule_probability(data: pd) -> list:
     return p
 
 
-def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str):
-    df = pd.DataFrame({'RMSD': data_rmsd, 'RG': data_rg, 'DG': data_dg})
-    df.to_csv(f"{path}/teste_data.csv", index=False)
+def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str, model:list, prefix_out: str):
+    df = pd.DataFrame({'RMSD': data_rmsd, 'RG': data_rg, 'DG': data_dg, 'model': model})
+    text_df = df.to_string(header=True, index=True)
+    with open(f'{path}/{prefix_out}_out.dat', 'w') as file_data_out:
+        file_data_out.write(text_df)
+        
+    file_data_out.close()
+    
+
 
 
 
