@@ -1,7 +1,6 @@
 import math
 import os
 import subprocess
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
@@ -129,7 +128,7 @@ def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str, model:list
     text_df = df.to_string(header=True, index=True)
     with open(f'{path}/{prefix_out}_out.dat', 'w') as file_data_out:
         file_data_out.write(text_df)
-        
+
     file_data_out.close()
     
 
