@@ -20,8 +20,9 @@ if '-traj_b' in args and '-cor_b' in args and '-top_b' in args:
 
 
 if '-data_DG' in args or '-show_grafic' in args or '-save_fig' in args or '-save_data' in args:
-    if "-traj_a" in args or "-traj_b" in args:
-        proc_a.join()
+    if "-traj_a" in args: 
+        proc_a.join()    
+    if "-traj_b" in args:
         proc_b.join()
     
     data = read_data(path_a=args['-data_a'], path_b=args['-data_b'])
