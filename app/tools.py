@@ -125,10 +125,6 @@ def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str, model:list
     with open(f'{path}/{prefix_out}_out.dat', 'w') as file_data_out:
         file_data_out.write(text_df)
 
-    
-
-
-
 
 def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
     data_rmsd = data['RMSD'].tolist()
@@ -167,7 +163,10 @@ def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, 
     if show_grafic:
         plt.show()
 
-def make_grafic_2D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
+    plt.close(fig)
+
+
+def make_grafic_2D(data: pd, save_fig: bool, show_grafic: bool, path: str = "./"):
     data_rmsd = data['RMSD'].tolist()
     data_rg = data['RG'].tolist()
     xlim = data['RMSD'].min(), data['RMSD'].max()

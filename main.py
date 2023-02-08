@@ -31,11 +31,11 @@ if '-data_DG' in args or '-show_grafic' in args or '-save_fig' in args or '-save
 
     if '-show_grafic' in args:
         make_grafic_3D(data=data.round(int(args['-bin'])), data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
-        make_grafic_2D(data=data, data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
+        make_grafic_2D(data=data, save_fig=False, show_grafic=args['-show_grafic'])
 
     if '-save_fig' in args:
         make_grafic_3D(data=data.round(int(args['-bin'])), path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
-        make_grafic_2D(data=data, path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
+        make_grafic_2D(data=data, path=args['-path'], save_fig=args['-save_fig'], show_grafic=False)
 
 
     if '-save_data' in args:
