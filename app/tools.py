@@ -60,8 +60,9 @@ def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, s
     try:
         os.remove(f'{path}/{prefix_out}_rg_rmsd.tmp')
         os.remove(f'{path}/bigdcd.tcl')
-    except:
-        pass
+    except Exception as e:
+        print("ERRO: " + e)
+
 
 def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
     KB = 3.2976268E-24
@@ -76,23 +77,21 @@ def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
        d_g.append(e)
 
 
-    i = 0
     max_e = max(d_g)
     min_e_holo = max_e
     min_e_apo = max_e
     print(min_e_holo)
-    for e in d_g:
+    for i, e in enumerate(d_g):
         if model[i] == 'a' and e < min_e_holo:
             min_e_holo = e 
         
         if model[i] == 'b' and e < min_e_apo:
             min_e_apo = e 
-        i +=1
 
     print(f"Min A: {min_e_apo}")
 
     print(f"Min B: {min_e_holo}")
-    print(f"deltaG: {min_e_holo-(min_e_apo)}")
+    print(f"DeltaG: {min_e_holo-(min_e_apo)}")
 
     return d_g 
 
@@ -104,11 +103,8 @@ def calcule_probability(data: pd) -> list:
     z = []
     x_y = []
 
-    i = 0
-    for o in x: 
+    for i, o in enumerate(x): 
         x_y.append((o, y[i]))
-        i += 1
-    
 
     counts = Counter(x_y)
 
@@ -129,7 +125,6 @@ def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str, model:list
     with open(f'{path}/{prefix_out}_out.dat', 'w') as file_data_out:
         file_data_out.write(text_df)
 
-    file_data_out.close()
     
 
 
