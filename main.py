@@ -20,26 +20,25 @@ if '-traj_b' in args and '-cor_b' in args and '-top_b' in args:
 
 
 if '-data_DG' in args or '-show_grafic' in args or '-save_fig' in args or '-save_data' in args:
-    if "-traj_a" in args or "-traj_b" in args:
-        proc_a.join()
+    if "-traj_a" in args: 
+        proc_a.join()    
+    if "-traj_b" in args:
         proc_b.join()
     
     data = read_data(path_a=args['-data_a'], path_b=args['-data_b'])
     probability = calcule_probability(data=data.round(int(args['-bin'])))
     delta_g = calcule_Delta_G(probability=probability, temp=args['-temp'], model = data['model'].tolist())
 
-
-if '-show_grafic' in args or '-save_fig' in args:
     if '-show_grafic' in args:
         make_grafic_3D(data=data.round(int(args['-bin'])), data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
-        make_grafic_2D(data=data, data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
+        make_grafic_2D(data=data, save_fig=False, show_grafic=args['-show_grafic'])
 
     if '-save_fig' in args:
         make_grafic_3D(data=data.round(int(args['-bin'])), path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
-        make_grafic_2D(data=data, path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
+        make_grafic_2D(data=data, path=args['-path'], save_fig=args['-save_fig'], show_grafic=False)
 
 
-if '-save_data' in args:
-    # Salva valores de RG-RMSD-DG em arquivo
-    save_data(data_rmsd=data['RMSD'].tolist(), data_rg=data['RG'].tolist(), data_dg=delta_g, model=data['model'].tolist(), path=args['-path'], prefix_out=args['-prefix_out'])
+    if '-save_data' in args:
+        # Salva valores de RG-RMSD-DG em arquivo
+        save_data(data_rmsd=data['RMSD'].tolist(), data_rg=data['RG'].tolist(), data_dg=delta_g, model=data['model'].tolist(), path=args['-path'], prefix_out=args['-prefix_out'])
 
