@@ -45,8 +45,8 @@ def read_data(path_a: str, path_b:str):
     return data
 
 
-def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str, big_traj: str):
-    if big_traj == "on": 
+def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str, big_traj: bool = False):
+    if big_traj: 
         with open(f'{path}/{prefix_out}_rg_rmsd.tmp', 'w') as file_script:
             file_script.writelines(script_rg_rmsd_big_traj(cord=cord, top=top, traj=traj, prefix_out=prefix_out, path=path, selection=selection))
         with open(f'{path}/bigdcd.tcl', 'w') as file_bigdcd:
