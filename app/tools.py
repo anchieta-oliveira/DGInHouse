@@ -201,6 +201,7 @@ def make_grafic_2D(data: pd, save_fig: bool, show_grafic: bool, path: str = "./"
 
     if show_grafic:
         plt.show()
+    plt.close(fig_2D)
 
 def make_temp_2D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
     pass
