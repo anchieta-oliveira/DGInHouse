@@ -9,10 +9,10 @@ python3 main.py -data_a caminho_data_a -data_b caminho_data_b
 ```
 
 ## Opções de comandos 
- - `-data_a` ou `data_b`: arquivo contendo valores de RG e RMSD;
- - `-cor_a` ou `cor_b`: arquivo de coordenada da simulação (pdb, .gro, etc);
- - `-top_a` ou `top_b`: arquivo de topologia da simulação (.psf)
- - `-traj_a` ou `traj_b`: trajetória da Dinâmica Molecular;
+ - `-data_a` ou `-data_b`: arquivo contendo valores de RG e RMSD;
+ - `-cor_a` ou `-cor_b`: arquivo de coordenada da simulação (pdb, .gro, etc);
+ - `-top_a` ou `-top_b`: arquivo de topologia da simulação (.psf)
+ - `-traj_a` ou `-traj_b`: trajetória da Dinâmica Molecular;
  - `-path`: local para salvar dados e/ou gráfico;
  - `-show_grafic`: mostrar gráfico na janela;
  - `-save_fig`: salva figura no caminho definido;
