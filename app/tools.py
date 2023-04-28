@@ -9,7 +9,7 @@ from app.rmsd_rg_vmd import script_rg_rmsd_big_traj, script_rg_rmsd, script_bigd
 
 def read_arguments() -> dict:
     # Argumetnos padrão 
-    parameters = {'-bin': 1, '-save_data': True, '-path': "./"}
+    parameters = {'-bin': 1, '-save_data': True, '-path': "./", "-big_traj": False}
     input_parameters_command_line = sys.argv
     i = 0 
     for flag in input_parameters_command_line:
