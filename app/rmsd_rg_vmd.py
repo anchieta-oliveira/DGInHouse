@@ -75,6 +75,8 @@ def script_rg_rmsd_big_traj(cord: str, top: str, traj: str, prefix_out:str, path
     #pbc wrap -orthorhombic -shiftcenterrel
     #pbc wrap -sel  " """ + selection + """ " -centersel  " """ + selection + """ frame 0" -center com
     #pbc wrap -compound fragment -center com -centersel " """ + selection + """ frame 0" -sel " """ + selection + """ "
+    pbc readxst ../run/MD.xst
+    pbc wrap -centersel "protein" -center com -compound residue -all
     $sel_protein_cg move [measure fit $sel_protein_cg $frame0]
     puts $outfile "[gyr_radius $sel_protein_cg]\t[measure rmsd $sel_protein_cg $frame0]"
     }

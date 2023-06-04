@@ -136,18 +136,18 @@ def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, 
     fig = plt.figure(figsize=plt.figaspect(0.5))
 
     ax0 = fig.add_subplot(2, 2, 1, projection='3d')
-    hb = ax0.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
+    hb = ax0.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
     ax0.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     cb = fig.colorbar(hb, ax=ax0, label='∆G(kcal/mol)')
 
     ax1 = fig.add_subplot(2, 2, 2, projection='3d')
-    hb = ax1.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
+    hb = ax1.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
     ax1.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     cb = fig.colorbar(hb, ax=ax1, label='∆G(kcal/mol)')
 
     ax2 = fig.add_subplot(2, 2, 3, projection='3d')
-    hb = ax2.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
-    hb = ax2.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
+    hb = ax2.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
+    hb = ax2.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
     ax2.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
     #cb = fig.colorbar(hb, ax=d_g, label='∆G(kcal/mol)')
 
