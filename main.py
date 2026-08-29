@@ -1,44 +1,106 @@
+import os
 from multiprocessing import Process
-from app.tools import read_arguments, read_data, calcule_Delta_G, calcule_probability, make_grafic_3D, save_data, calcule_rg_rmsd, make_grafic_2D
+
+from app.tools import (
+    calcule_Delta_G,
+    calcule_probability,
+    calcule_rg_rmsd,
+    make_grafic_2D,
+    make_grafic_3D,
+    read_arguments,
+    read_data,
+    save_data,
+)
 
 
-args = read_arguments()
+def _validate_trajectory_flags(args):
+    for suffix in ('a', 'b'):
+        flags = {f'cor_{suffix}', f'top_{suffix}', f'traj_{suffix}'}
+        provided = {flag for flag in flags if args[flag]}
+        if provided and provided != flags:
+            missing = ', '.join(sorted(flags - provided))
+            raise SystemExit(
+                f"Incomplete trajectory input for system {suffix}; missing: {missing}"
+            )
 
 
-if '-traj_a' in args and '-cor_a' in args and '-top_a' in args:
-    # Criar data RG-RMSD
-    proc_a = Process(target=calcule_rg_rmsd, args=(args['-cor_a'], args['-top_a'], args['-traj_a'], args['-prefix_out'] + "_a", args['-path'], args['-sel'], args['-big_traj']))
-    proc_a.start()
-    args['-data_a']=args['-path'] + "/" + args['-prefix_out'] + "_a.dat"
+def _validate_data_arguments(args):
+    missing = [f'data_{suffix}' for suffix in ('a', 'b') if not args[f'data_{suffix}']]
+    if missing:
+        raise SystemExit(
+            'Two input datasets are required; missing: ' + ', '.join(missing)
+        )
 
 
-if '-traj_b' in args and '-cor_b' in args and '-top_b' in args:
-    # Criar data RG-RMSD
-    proc_b = Process(target=calcule_rg_rmsd, args=(args['-cor_b'], args['-top_b'], args['-traj_b'], args['-prefix_out']+ "_b", args['-path'], args['-sel'], args['-big_traj']))
-    proc_b.start()
-    args['-data_b']=args['-path'] + "/" + args['-prefix_out'] + "_b.dat"
+def _run_trajectory_jobs(args):
+    processes = []
+    for suffix in ('a', 'b'):
+        if all(args[f'{name}_{suffix}'] for name in ('traj', 'cor', 'top')):
+            prefix = f"{args['prefix_out']}_{suffix}"
+            process = Process(
+                target=calcule_rg_rmsd,
+                args=(
+                    args[f'cor_{suffix}'],
+                    args[f'top_{suffix}'],
+                    args[f'traj_{suffix}'],
+                    prefix,
+                    args['path'],
+                    args['sel'],
+                ),
+            )
+            process.start()
+            processes.append((suffix, process, os.path.join(args['path'], f'{prefix}.dat')))
+            args[f'data_{suffix}'] = os.path.join(args['path'], f'{prefix}.dat')
+
+    for suffix, process, output_path in processes:
+        process.join()
+        if process.exitcode != 0:
+            raise RuntimeError(f"VMD processing failed for system {suffix}")
+        if not os.path.isfile(output_path) or os.path.getsize(output_path) == 0:
+            raise RuntimeError(f"VMD produced no data for system {suffix}: {output_path}")
 
 
-if '-data_DG' in args or '-show_grafic' in args or '-save_fig' in args or '-save_data' in args:
-    if "-traj_a" in args: 
-        proc_a.join()    
-    if "-traj_b" in args:
-        proc_b.join()
-    
-    data = read_data(path_a=args['-data_a'], path_b=args['-data_b'])
-    probability = calcule_probability(data=data.round(int(args['-bin'])))
-    delta_g = calcule_Delta_G(probability=probability, temp=args['-temp'], model = data['model'].tolist())
+def main():
+    args = read_arguments()
+    _validate_trajectory_flags(args)
+    os.makedirs(args['path'], exist_ok=True)
+    _run_trajectory_jobs(args)
+    _validate_data_arguments(args)
 
-    if '-show_grafic' in args:
-        make_grafic_3D(data=data.round(int(args['-bin'])), data_dg=delta_g, save_fig=False, show_grafic=args['-show_grafic'])
-        make_grafic_2D(data=data, save_fig=False, show_grafic=args['-show_grafic'])
+    data = read_data(path_a=args['data_a'], path_b=args['data_b'])
+    rounded_data = data.copy()
+    rounded_data[['RMSD', 'RG']] = rounded_data[['RMSD', 'RG']].round(args['bin'])
+    probability = calcule_probability(data=rounded_data)
+    delta_g = calcule_Delta_G(
+        probability=probability,
+        temp=args['temp'],
+        model=data['model'].tolist(),
+    )
 
-    if '-save_fig' in args:
-        make_grafic_3D(data=data.round(int(args['-bin'])), path=args['-path'], data_dg=delta_g, save_fig=args['-save_fig'], show_grafic=False)
-        make_grafic_2D(data=data, path=args['-path'], save_fig=args['-save_fig'], show_grafic=False)
+    if args['show_grafic']:
+        make_grafic_3D(data=rounded_data, data_dg=delta_g, save_fig=False, show_grafic=True)
+        make_grafic_2D(data=data, save_fig=False, show_grafic=True)
+
+    if args['save_fig']:
+        make_grafic_3D(
+            data=rounded_data,
+            path=args['path'],
+            data_dg=delta_g,
+            save_fig=True,
+            show_grafic=False,
+        )
+        make_grafic_2D(data=data, path=args['path'], save_fig=True, show_grafic=False)
+
+    if args['save_data']:
+        save_data(
+            data_rmsd=data['RMSD'].tolist(),
+            data_rg=data['RG'].tolist(),
+            data_dg=delta_g,
+            model=data['model'].tolist(),
+            path=args['path'],
+            prefix_out=args['prefix_out'],
+        )
 
 
-    if '-save_data' in args:
-        # Salva valores de RG-RMSD-DG em arquivo
-        save_data(data_rmsd=data['RMSD'].tolist(), data_rg=data['RG'].tolist(), data_dg=delta_g, model=data['model'].tolist(), path=args['-path'], prefix_out=args['-prefix_out'])
-
+if __name__ == '__main__':
+    main()

@@ -1,207 +1,233 @@
+import argparse
 import math
 import os
 import subprocess
-import pandas as pd
-import matplotlib.pyplot as plt
 import sys
-from collections import Counter
-from app.rmsd_rg_vmd import script_rg_rmsd_big_traj, script_rg_rmsd, script_bigdcd
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from app.rmsd_rg_vmd import script_rg_rmsd
+
 
 def read_arguments() -> dict:
-    # Argumetnos padrão 
-    parameters = {'-bin': 1, '-save_data': True, '-path': "./"}
-    input_parameters_command_line = sys.argv
-    i = 0 
-    for flag in input_parameters_command_line:
-        if "-" in flag:
-            try:
-                if "\"" in input_parameters_command_line[i+1]:
-                    text = ""
-                    o = 1
-                    while "\"" != input_parameters_command_line[i+1]:
-                        text += input_parameters_command_line[i+1+o]
-                        o += 1
-                else:
-                    parameters[flag] = input_parameters_command_line[i+1]
+    parser = argparse.ArgumentParser(
+        description='Compare RMSD/RG data and estimate relative free energies.'
+    )
+    parser.add_argument('-data_a')
+    parser.add_argument('-data_b')
+    parser.add_argument('-cor_a')
+    parser.add_argument('-cor_b')
+    parser.add_argument('-top_a')
+    parser.add_argument('-top_b')
+    parser.add_argument('-traj_a')
+    parser.add_argument('-traj_b')
+    parser.add_argument('-path', default='./')
+    parser.add_argument('-prefix_out', default='output')
+    parser.add_argument('-sel', default='all')
+    parser.add_argument('-bin', type=int, default=1)
+    parser.add_argument('-temp', type=float, default=300.0)
+    parser.add_argument('-show_grafic', action='store_true')
+    parser.add_argument('-save_fig', action='store_true')
+    parser.add_argument('-save_data', action='store_true', default=True)
+    parser.add_argument('-no_save_data', action='store_false', dest='save_data')
 
-            except:
-                parameters[flag] = True
-        
-        i += 1 
-    return parameters 
-
-def read_data(path_a: str, path_b:str):
-    #data_com = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/com_lig/100_micro/rg_cg_and_rmsd_com_lig.dat', sep='\t', skipinitialspace=True)
-    #data_sem = pd.read_csv('/home/anchieta/3TB/Anchieta/Projetos/CG-HIV-Prot-Energy/Dados/DadosClara/sem_lig/100_micro/rg_cg_and_rmsd_sem_lig_100.dat', sep='\t', skipinitialspace=True)
-
-    data_a = pd.read_csv(path_a, sep='\t', skipinitialspace=True)
-    data_b = pd.read_csv(path_b, sep='\t', skipinitialspace=True)
-
-    data_a = data_a.assign(model='a')
-    data_b = data_b.assign(model='b')
-
-    data = pd.merge(data_a, data_b, how='outer')
-
-    return data
+    args = vars(parser.parse_args(sys.argv[1:]))
+    if args['bin'] < 0:
+        parser.error('-bin must be zero or greater')
+    if args['temp'] <= 0:
+        parser.error('-temp must be greater than zero')
+    return args
 
 
-def calcule_rg_rmsd(cord: str, top: str, traj: str, prefix_out:str, path: str, selection:str, big_traj: bool = False):
-    if big_traj: 
-        with open(f'{path}/{prefix_out}_rg_rmsd.tmp', 'w') as file_script:
-            file_script.writelines(script_rg_rmsd_big_traj(cord=cord, top=top, traj=traj, prefix_out=prefix_out, path=path, selection=selection))
-        with open(f'{path}/bigdcd.tcl', 'w') as file_bigdcd:
-            file_bigdcd.writelines(script_bigdcd())
-    else:
-        with open(f'{path}/{prefix_out}_rg_rmsd.tmp', 'w') as file_script:
-            file_script.writelines(script_rg_rmsd(cord=cord, top=top, traj=traj, prefix_out=prefix_out, path=path, selection=selection))
+def read_data(path_a: str, path_b: str) -> pd.DataFrame:
+    frames = []
+    for path, model in ((path_a, 'a'), (path_b, 'b')):
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f'Input file not found: {path}')
+        data = pd.read_csv(path, sep='\t', skipinitialspace=True)
+        required_columns = {'RG', 'RMSD'}
+        missing = required_columns - set(data.columns)
+        if missing:
+            raise ValueError(
+                f"{path} is missing required columns: {', '.join(sorted(missing))}"
+            )
+        if data.empty:
+            raise ValueError(f'Input file is empty: {path}')
+        for column in ('RG', 'RMSD'):
+            data[column] = pd.to_numeric(data[column], errors='raise')
+        if not data[['RG', 'RMSD']].map(lambda value: math.isfinite(value)).all().all():
+            raise ValueError(f'RG and RMSD must contain only finite values: {path}')
+        frames.append(data[['RG', 'RMSD']].assign(model=model))
 
-    proc = subprocess.Popen(args=f"vmd -e {path}/{prefix_out}_rg_rmsd.tmp -dispdev text > {path}/{prefix_out}_rg_rmsd_vmd.log", shell=True)
-    proc.wait()
+    return pd.concat(frames, ignore_index=True)
+
+
+def calcule_rg_rmsd(
+    cord: str,
+    top: str,
+    traj: str,
+    prefix_out: str,
+    path: str,
+    selection: str,
+    timeout: int = 3600,
+):
+    os.makedirs(path, exist_ok=True)
+    script_path = os.path.join(path, f'{prefix_out}_rg_rmsd.tmp')
+    output_path = os.path.join(path, f'{prefix_out}.dat')
+    log_path = os.path.join(path, f'{prefix_out}_rg_rmsd_vmd.log')
+
+    with open(script_path, 'w') as file_script:
+        file_script.write(
+            script_rg_rmsd(
+                cord=cord,
+                top=top,
+                traj=traj,
+                prefix_out=prefix_out,
+                path=path,
+                selection=selection,
+            )
+        )
+
     try:
-        os.remove(f'{path}/{prefix_out}_rg_rmsd.tmp')
-        os.remove(f'{path}/bigdcd.tcl')
-    except Exception as e:
-        print("ERRO: " + e)
+        with open(log_path, 'w') as log_file:
+            subprocess.run(
+                ['vmd', '-e', script_path, '-dispdev', 'text'],
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                cwd=path,
+                check=True,
+                timeout=timeout,
+            )
+    except FileNotFoundError as error:
+        raise RuntimeError('VMD was not found on PATH') from error
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(f'VMD timed out after {timeout} seconds') from error
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(f'VMD failed; see log: {log_path}') from error
+    finally:
+        try:
+            os.remove(script_path)
+        except FileNotFoundError:
+            pass
+
+    if not os.path.isfile(output_path) or os.path.getsize(output_path) == 0:
+        raise RuntimeError(f'VMD produced no data: {output_path}')
 
 
 def calcule_Delta_G(probability: list, temp: float, model: list) -> list:
-    KB = 3.2976268E-24
-    AN = 6.02214179E23
-    T = float(temp) #temperature
-    Pmax = max(probability)
-    LnPmax = math.log(Pmax) 
-    d_g = []
+    if len(probability) == 0 or len(probability) != len(model):
+        raise ValueError('Probability and model data must be non-empty and have equal length')
+    temperature = float(temp)
+    if temperature <= 0 or not math.isfinite(temperature):
+        raise ValueError('Temperature must be a finite value greater than zero')
+    if any(prob <= 0 or not math.isfinite(prob) for prob in probability):
+        raise ValueError('Probabilities must be finite values greater than zero')
 
-    for b in probability:
-       e = -0.001*AN*KB*T*(math.log(b)-LnPmax)
-       d_g.append(e)
-
-
-    max_e = max(d_g)
-    min_e_holo = max_e
-    min_e_apo = max_e
-    print(min_e_holo)
-    for i, e in enumerate(d_g):
-        if model[i] == 'a' and e < min_e_holo:
-            min_e_holo = e 
-        
-        if model[i] == 'b' and e < min_e_apo:
-            min_e_apo = e 
-
-    print(f"Min A: {min_e_apo}")
-
-    print(f"Min B: {min_e_holo}")
-    print(f"DeltaG: {min_e_holo-(min_e_apo)}")
-
-    return d_g 
+    kb = 3.2976268e-24
+    avogadro = 6.02214179e23
+    max_log_probability = math.log(max(probability))
+    return [
+        -0.001 * avogadro * kb * temperature * (math.log(prob) - max_log_probability)
+        for prob in probability
+    ]
 
 
-
-def calcule_probability(data: pd) -> list:
-    x = data['RMSD'].tolist()
-    y = data['RG'].tolist()
-    z = []
-    x_y = []
-
-    for i, o in enumerate(x): 
-        x_y.append((o, y[i]))
-
-    counts = Counter(x_y)
-
-    for o in x_y:
-        z.append(counts[o])
-
-    p = []
-    n = len(z)
-    for o in z:
-        p.append(o/n)
-
-    return p
+def calcule_probability(data: pd.DataFrame) -> list:
+    if data.empty:
+        raise ValueError('Cannot calculate probabilities from empty data')
+    if not {'RMSD', 'RG'}.issubset(data.columns):
+        raise ValueError('Data must contain RMSD and RG columns')
+    counts = data.groupby(['RMSD', 'RG'], sort=False, dropna=False)['RMSD'].transform('size')
+    return (counts / len(data)).tolist()
 
 
-def save_data(data_rmsd: list, data_rg:list, data_dg:list, path: str, model:list, prefix_out: str):
+def save_data(
+    data_rmsd: list,
+    data_rg: list,
+    data_dg: list,
+    path: str,
+    model: list,
+    prefix_out: str,
+):
+    output_path = os.path.join(path, f'{prefix_out}_out.dat')
     df = pd.DataFrame({'RMSD': data_rmsd, 'RG': data_rg, 'DG': data_dg, 'model': model})
-    text_df = df.to_string(header=True, index=True)
-    with open(f'{path}/{prefix_out}_out.dat', 'w') as file_data_out:
-        file_data_out.write(text_df)
+    df.to_csv(output_path, sep='\t', index=False)
 
 
-def make_grafic_3D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
-    data_rmsd = data['RMSD'].tolist()
-    data_rg = data['RG'].tolist()
-    xlim = data['RMSD'].min(), data['RMSD'].max()
-    ylim = data['RG'].min(), data['RG'].max() 
-    size_data = int(len(data.index)/2)
+def _plot_surface(axis, data, data_dg, cmap):
+    points = pd.DataFrame({'RMSD': data['RMSD'], 'RG': data['RG'], 'DG': data_dg}).drop_duplicates(
+        subset=['RMSD', 'RG']
+    )
+    if len(points) < 3:
+        axis.scatter(points['RMSD'], points['RG'], points['DG'], cmap=cmap)
+        return None
+    try:
+        return axis.plot_trisurf(
+            points['RMSD'],
+            points['RG'],
+            points['DG'],
+            cmap=cmap,
+            edgecolor='none',
+            linewidth=0.5,
+            antialiased=True,
+        )
+    except ValueError:
+        axis.scatter(points['RMSD'], points['RG'], points['DG'], cmap=cmap)
+        return None
 
+
+def make_grafic_3D(data: pd.DataFrame, data_dg: list, save_fig: bool, show_grafic: bool, path: str = './'):
+    systems = [data[data['model'] == model].reset_index(drop=True) for model in ('a', 'b')]
+    dg_by_model = [
+        [data_dg[index] for index, value in enumerate(data['model']) if value == model]
+        for model in ('a', 'b')
+    ]
     fig = plt.figure(figsize=plt.figaspect(0.5))
+    axes = [
+        fig.add_subplot(2, 2, 1, projection='3d'),
+        fig.add_subplot(2, 2, 2, projection='3d'),
+        fig.add_subplot(2, 2, 3, projection='3d'),
+        fig.add_subplot(2, 2, 4, projection='3d'),
+    ]
+    colors = ('OrRd', 'Greens')
 
-    ax0 = fig.add_subplot(2, 2, 1, projection='3d')
-    hb = ax0.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax0.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-    cb = fig.colorbar(hb, ax=ax0, label='∆G(kcal/mol)')
+    for axis, system, values, cmap in zip(axes[:2], systems, dg_by_model, colors):
+        if not system.empty:
+            surface = _plot_surface(axis, system, values, cmap)
+            if surface is not None:
+                fig.colorbar(surface, ax=axis, label='ΔG (kcal/mol)')
 
-    ax1 = fig.add_subplot(2, 2, 2, projection='3d')
-    hb = ax1.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax1.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-    cb = fig.colorbar(hb, ax=ax1, label='∆G(kcal/mol)')
+    if all(not system.empty for system in systems):
+        _plot_surface(axes[2], data, data_dg, 'viridis')
+    if not data.empty:
+        _plot_surface(axes[3], data, data_dg, 'viridis')
 
-    ax2 = fig.add_subplot(2, 2, 3, projection='3d')
-    hb = ax2.plot_trisurf(data_rmsd[:size_data], data_rg[:size_data], data_dg[:size_data], cmap='OrRd', edgecolor='none',   linewidth=0.5, antialiased=True)
-    hb = ax2.plot_trisurf(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], data_dg[size_data:(2*size_data)], cmap='Greens', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax2.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-    #cb = fig.colorbar(hb, ax=d_g, label='∆G(kcal/mol)')
-
-    ax3 = fig.add_subplot(2, 2, 4, projection='3d')
-    hb = ax3.plot_trisurf(data_rmsd, data_rg, data_dg, cmap='viridis', edgecolor='none',   linewidth=0.5, antialiased=True)
-    ax3.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-    cb = fig.colorbar(hb, ax=ax3, label='∆G(kcal/mol)')
+    for axis in axes:
+        axis.set(xlabel='RMSD', ylabel='RG')
     plt.tight_layout()
-
     if save_fig:
-        fig.savefig(f"{path}/teste.png")
-
+        fig.savefig(os.path.join(path, 'teste_3d.png'))
     if show_grafic:
         plt.show()
-
     plt.close(fig)
 
 
-def make_grafic_2D(data: pd, save_fig: bool, show_grafic: bool, path: str = "./"):
-    data_rmsd = data['RMSD'].tolist()
-    data_rg = data['RG'].tolist()
-    xlim = data['RMSD'].min(), data['RMSD'].max()
-    ylim = data['RG'].min(), data['RG'].max() 
-    size_data = int(len(data.index)/2)
-
-    fig_2D, (ax0, ax1, ax2, ax3) = plt.subplots(ncols=4, sharey=True, figsize=(20, 4))
-    # plot 1 
-    hb = ax0.hexbin(data_rmsd[:size_data], data_rg[:size_data], gridsize=100, bins='log', cmap='Greens')
-    ax0.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-
-    #cb = fig.colorbar(hb, ax=ax0, label='log10(N)')
-    # Plot 2 
-    hb = ax1.hexbin(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], gridsize=100, bins='log', cmap='OrRd')
-    ax1.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-
-    #cb = fig.colorbar(hb, ax=ax1, label='log10(N)')
-    # plot 3 
-    hb = ax2.hexbin(data_rmsd[:size_data], data_rg[:size_data], gridsize=100, bins='log', cmap='Greens')
-    hb = ax2.hexbin(data_rmsd[size_data:(2*size_data)], data_rg[size_data:(2*size_data)], gridsize=100, bins='log', cmap='OrRd')
-    ax2.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
-
-    #cb = fig.colorbar(hb, ax=ax2, label='log10(N)')
-    # Plot 4
-    hb = ax3.hexbin(data_rmsd, data_rg, gridsize=100, bins='log', cmap='viridis')
-    ax3.set(xlim=xlim, ylim=ylim, xlabel="RMSD", ylabel="RG")
+def make_grafic_2D(data: pd.DataFrame, save_fig: bool, show_grafic: bool, path: str = './'):
+    systems = [data[data['model'] == model] for model in ('a', 'b')]
+    fig_2d, axes = plt.subplots(ncols=4, sharey=True, figsize=(20, 4))
+    colors = ('Greens', 'OrRd')
+    for axis, system, cmap in zip(axes[:2], systems, colors):
+        if not system.empty:
+            axis.hexbin(system['RMSD'], system['RG'], gridsize=100, bins='log', cmap=cmap)
+    if not data.empty:
+        axes[2].hexbin(data['RMSD'], data['RG'], gridsize=100, bins='log', cmap='viridis')
+        axes[3].scatter(data['RMSD'], data['RG'], s=4)
+    for axis in axes:
+        axis.set(xlabel='RMSD', ylabel='RG')
     plt.tight_layout()
-
-    #cb = fig.colorbar(hb, ax=ax3, label='log10(N)')
     if save_fig:
-        fig_2D.savefig(f"{path}/teste.png")
-
+        fig_2d.savefig(os.path.join(path, 'teste_2d.png'))
     if show_grafic:
         plt.show()
-    plt.close(fig_2D)
-
-def make_temp_2D(data: pd,  data_dg: list, save_fig: bool, show_grafic: bool, path: str = "./"):
-    pass
+    plt.close(fig_2d)
