@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use DGInHouse, please cite this repository."
+title: "DGInHouse: RMSD, radius of gyration, and free-energy analysis"
+type: software
+authors:
+  - family-names: Oliveira
+    given-names: Anchieta
+repository-code: "https://github.com/anchieta-oliveira/DGInHouse"
+license: MIT
+version: "0.1.0"
+date-released: 2026-08-29
+keywords:
+  - molecular dynamics
+  - RMSD
+  - radius of gyration
+  - free-energy analysis
