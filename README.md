@@ -44,10 +44,6 @@ python3 main.py \
   -path results -prefix_out comparison -sel "protein"
 ```
 
-Use `-big_traj` for the streaming trajectory workflow. Its periodic-boundary
-alignment behavior is a known limitation and is not guaranteed to match the normal
-trajectory workflow.
-
 ## Command-line options
 
 - `-data_a`, `-data_b`: tab-separated RG/RMSD input files.
@@ -63,8 +59,8 @@ trajectory workflow.
 - `-save_fig`: save `teste_3d.png` and `teste_2d.png` under `-path`.
 - `-save_data`: save RMSD, RG, free-energy, and system labels; enabled by default.
 
-Boolean options are enabled by including the flag. The command-line parser is
-intentionally lightweight and does not provide a separate help command.
+Boolean options are enabled by including the flag. Use `-no_save_data` when the
+data output is not required.
 
 ## Output and figures
 
